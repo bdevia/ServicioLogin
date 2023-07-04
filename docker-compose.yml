@@ -1,0 +1,52 @@
+version: '3.7'
+
+networks:
+  default:
+    name: "my-net"
+
+services:
+  zookeeper:
+    container_name: zookeeper
+    image: zookeeper:3.7
+    environment:
+      - ALLOW_ANONYMOUS_LOGIN=yes
+
+  kafka:
+    container_name: kafka
+    image: bitnami/kafka:3.1
+    environment:
+      - ALLOW_PLAINTEXT_LISTENER=yes
+      - KAFKA_CFG_ZOOKEEPER_CONNECT=zookeeper:2181
+    depends_on:
+      - zookeeper
+  
+  login-service:
+    build:
+      context: ./login-service
+      dockerfile: dockerfile
+    image: login
+    container_name: login-service
+    restart: always
+    depends_on:
+      - zookeeper
+      - kafka
+    volumes:
+      - ./db/users_blocked.json:/app/users_blocked.json
+    ports:
+      - 3000:3000
+
+  security-service:
+    build:
+      context: ./security-service
+      dockerfile: dockerfile
+    image: security
+    container_name: security-service
+    restart: always
+    depends_on:
+      - zookeeper
+      - kafka
+      - login-service
+    volumes:
+      - ./db/users_blocked.json:/app/users_blocked.json
+    ports:
+      - 5000:5000 

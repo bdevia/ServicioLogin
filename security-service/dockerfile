@@ -1,0 +1,6 @@
+FROM node:17
+WORKDIR /app
+RUN npm init -y 
+RUN npm install express kafka-node fs
+COPY . .
+CMD [ "node", "index.js" ]
